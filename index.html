@@ -6,6 +6,7 @@
   <title>Houston Government Spending Tracker</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="auth.js"></script>
 </head>
 <body>
 
@@ -18,14 +19,16 @@
           <p>City of Houston — Fiscal Year 2025–2026</p>
         </div>
       </div>
-      <div class="header-meta">
-        <span class="badge">Public Data</span>
-        <span class="last-updated">Last updated: Apr 24, 2026</span>
+      <div class="user-info" id="userInfo">
+        <!-- populated by app.js after auth check -->
       </div>
     </div>
   </header>
 
   <main class="container">
+
+    <!-- Access notice (role-specific, populated by app.js) -->
+    <div id="accessNotice"></div>
 
     <!-- Summary Cards -->
     <section class="summary-cards">
@@ -103,6 +106,7 @@
           <select id="categoryFilter" class="filter-select">
             <option value="">All Categories</option>
           </select>
+          <button id="exportBtn" class="export-btn" hidden>Export CSV</button>
         </div>
       </div>
       <div class="table-wrap">
@@ -111,7 +115,7 @@
             <tr>
               <th data-col="date" class="sortable">Date <span class="sort-icon">↕</span></th>
               <th data-col="department" class="sortable">Department <span class="sort-icon">↕</span></th>
-              <th data-col="vendor">Vendor</th>
+              <th data-col="vendor" id="vendorHeader">Vendor</th>
               <th data-col="category" class="sortable">Category <span class="sort-icon">↕</span></th>
               <th data-col="description">Description</th>
               <th data-col="amount" class="sortable">Amount <span class="sort-icon">↕</span></th>
