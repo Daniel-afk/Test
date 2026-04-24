@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Houston Government Spending Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="city-seal">H</div>
+        <div>
+          <h1>Houston Spending Tracker</h1>
+          <p>City of Houston — Fiscal Year 2025–2026</p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <span class="badge">Public Data</span>
+        <span class="last-updated">Last updated: Apr 24, 2026</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Summary Cards -->
+    <section class="summary-cards">
+      <div class="card stat-card">
+        <div class="stat-label">Total FY Budget</div>
+        <div class="stat-value" id="totalBudget">$0</div>
+        <div class="stat-sub">Approved by City Council</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">Total Spent YTD</div>
+        <div class="stat-value accent-blue" id="totalSpent">$0</div>
+        <div class="stat-sub">Year-to-date expenditures</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">Remaining Budget</div>
+        <div class="stat-value accent-green" id="remaining">$0</div>
+        <div class="stat-sub">Unspent appropriations</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">Budget Utilized</div>
+        <div class="stat-value accent-orange" id="percentUsed">0%</div>
+        <div class="stat-sub progress-wrap">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressFill"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Row -->
+    <section class="charts-row">
+      <div class="card chart-card">
+        <h2>Spending by Department</h2>
+        <div class="chart-wrap">
+          <canvas id="deptChart"></canvas>
+        </div>
+      </div>
+      <div class="card chart-card chart-card--sm">
+        <h2>Budget Allocation</h2>
+        <div class="chart-wrap chart-wrap--donut">
+          <canvas id="allocChart"></canvas>
+        </div>
+        <div id="allocLegend" class="custom-legend"></div>
+      </div>
+    </section>
+
+    <!-- Trend Chart -->
+    <section class="card chart-card chart-card--full">
+      <h2>Monthly Spending Trend (FY 2025–2026)</h2>
+      <div class="chart-wrap chart-wrap--trend">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Departments Detail -->
+    <section class="card">
+      <h2>Department Breakdown</h2>
+      <div class="dept-grid" id="deptGrid"></div>
+    </section>
+
+    <!-- Transactions Table -->
+    <section class="card">
+      <div class="table-header">
+        <h2>Recent Expenditures</h2>
+        <div class="table-controls">
+          <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="Search transactions..."
+          />
+          <select id="deptFilter" class="filter-select">
+            <option value="">All Departments</option>
+          </select>
+          <select id="categoryFilter" class="filter-select">
+            <option value="">All Categories</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="spending-table" id="spendingTable">
+          <thead>
+            <tr>
+              <th data-col="date" class="sortable">Date <span class="sort-icon">↕</span></th>
+              <th data-col="department" class="sortable">Department <span class="sort-icon">↕</span></th>
+              <th data-col="vendor">Vendor</th>
+              <th data-col="category" class="sortable">Category <span class="sort-icon">↕</span></th>
+              <th data-col="description">Description</th>
+              <th data-col="amount" class="sortable">Amount <span class="sort-icon">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="rowCount"></span>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Data sourced from the City of Houston Finance Department. This tracker is for public transparency purposes.</p>
+      <p>Houston, TX 77002 &bull; finance.houstontx.gov</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
