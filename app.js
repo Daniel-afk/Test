@@ -2,13 +2,11 @@
 const SESSION = Auth.requireAuth();
 if (!SESSION) throw new Error('Not authenticated');
 
-/* ── Render user info in header ───────────────────────────── */
+/* ── Render user info ─────────────────────────────────────── */
 (function renderUserInfo() {
-  const meta    = Auth.roleMeta(SESSION.role);
-  const initial = SESSION.name.charAt(0).toUpperCase();
-  const bar     = document.getElementById('userInfo');
-  bar.innerHTML = `
-    <div class="user-avatar">${initial}</div>
+  const meta = Auth.roleMeta(SESSION.role);
+  document.getElementById('userInfo').innerHTML = `
+    <div class="user-avatar">${SESSION.name.charAt(0)}</div>
     <div class="user-details">
       <div class="user-name">${SESSION.name}</div>
       <div class="user-email">${SESSION.email}</div>
@@ -36,130 +34,22 @@ if (!SESSION) throw new Error('Not authenticated');
 })();
 
 /* ── Permissions ──────────────────────────────────────────── */
-const CAN_SEE_VENDORS  = Auth.can(SESSION, 'view_vendors');
-const CAN_EXPORT       = Auth.can(SESSION, 'export_data');
-const CAN_ALL_RECORDS  = Auth.can(SESSION, 'view_all_records');
+const CAN_SEE_VENDORS = Auth.can(SESSION, 'view_vendors');
+const CAN_EXPORT      = Auth.can(SESSION, 'export_data');
+const CAN_ALL_RECORDS = Auth.can(SESSION, 'view_all_records');
 const PUBLIC_ROW_LIMIT = 50;
 
-/* ── Data ─────────────────────────────────────────────────── */
-
-const DEPARTMENTS = [
-  { id: 'police',   name: 'Houston Police',        icon: '🚓', color: '#1a5fa8', budget: 1050e6 },
-  { id: 'fire',     name: 'Houston Fire',           icon: '🚒', color: '#c62828', budget: 580e6  },
-  { id: 'public',   name: 'Public Works',           icon: '🏗️', color: '#ef6c00', budget: 640e6  },
-  { id: 'parks',    name: 'Parks & Recreation',     icon: '🌳', color: '#2e7d32', budget: 185e6  },
-  { id: 'health',   name: 'Health & Human Svcs',    icon: '🏥', color: '#00838f', budget: 220e6  },
-  { id: 'housing',  name: 'Housing & Community',    icon: '🏘️', color: '#6a1b9a', budget: 130e6  },
-  { id: 'library',  name: 'Houston Public Library', icon: '📚', color: '#1565c0', budget: 58e6   },
-  { id: 'admin',    name: 'Administration',         icon: '🏛️', color: '#37474f', budget: 210e6  },
-  { id: 'aviation', name: 'Aviation (HAS)',         icon: '✈️', color: '#0277bd', budget: 420e6  },
-  { id: 'solid',    name: 'Solid Waste Mgmt',       icon: '♻️', color: '#558b2f', budget: 160e6  },
-];
-
-const CATEGORIES = [
-  'Personnel Services',
-  'Contracts & Services',
-  'Capital Improvements',
-  'Equipment & Supplies',
-  'Debt Service',
-  'Grants & Aid',
-];
-
-const CATEGORY_COLORS = {
-  'Personnel Services':   '#1a5fa8',
-  'Contracts & Services': '#ef6c00',
-  'Capital Improvements': '#2e7d32',
-  'Equipment & Supplies': '#6a1b9a',
-  'Debt Service':         '#c62828',
-  'Grants & Aid':         '#00838f',
-};
-
-const VENDORS = [
-  'Jacobs Engineering Group', 'Kiewit Infrastructure', 'Turner Construction',
-  'Motorola Solutions', 'SAIC Technologies', 'Waste Management Inc.',
-  'Republic Services', 'Axon Enterprise', 'Tyler Technologies',
-  'HDR Engineering', 'Stantec Consulting', 'AECOM Technical Services',
-  'Siemens Industry', 'Johnson Controls', 'Gartner Inc.',
-  'Deloitte Consulting', 'IBM Corporation', 'Oracle America',
-  'Houston Firefighters Relief', 'Harris County Hospital District',
-  'Houston First Corporation', 'Centro de Salud Familiar',
-];
-
-const MONTHLY_LABELS = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr'];
-const MONTHLY_SPENT  = [268, 312, 291, 340, 358, 375, 290, 320, 344, 361];
-const MONTHLY_BUDGET = Array(10).fill(380);
-
-/* ── Helpers ──────────────────────────────────────────────── */
-
-function rand(min, max) { return Math.random() * (max - min) + min; }
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
+/* ── Formatters ───────────────────────────────────────────── */
 function fmtMoney(n) {
   if (Math.abs(n) >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
   if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
   return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-
 function fmtMoneyFull(n) {
   return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-const DESCRIPTIONS = {
-  'Personnel Services':   ['Payroll disbursement','Overtime pay','Benefits & insurance','Pension contributions','Temp staffing'],
-  'Contracts & Services': ['IT managed services','Janitorial contract','Security services','Legal services','Consulting engagement'],
-  'Capital Improvements': ['Road resurfacing','Bridge repair','Facility renovation','Drainage upgrade','Park improvements'],
-  'Equipment & Supplies': ['Fleet vehicles','Protective equipment','Office supplies','Software licenses','Lab equipment'],
-  'Debt Service':         ['Bond principal payment','Interest payment','Lease obligation','Revenue bond debt'],
-  'Grants & Aid':         ['Community development','Public health grant','Housing assistance','Youth program funding'],
-};
-
-/* ── Generate Transactions ────────────────────────────────── */
-
-function generateTransactions(count = 300) {
-  const txns  = [];
-  const start = new Date('2025-07-01');
-  const end   = new Date('2026-04-24');
-  const range = end - start;
-
-  for (let i = 0; i < count; i++) {
-    const dept = pick(DEPARTMENTS);
-    const cat  = pick(CATEGORIES);
-    const date = new Date(start.getTime() + Math.random() * range);
-
-    let amount;
-    if (cat === 'Capital Improvements') amount = rand(500_000, 12_000_000);
-    else if (cat === 'Debt Service')    amount = rand(1_000_000, 8_000_000);
-    else if (cat === 'Personnel Services') amount = rand(50_000, 3_000_000);
-    else                                   amount = rand(10_000, 2_000_000);
-
-    txns.push({
-      id:          i + 1,
-      date,
-      dateStr:     date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      department:  dept.name,
-      deptId:      dept.id,
-      vendor:      pick(VENDORS),
-      category:    cat,
-      description: pick(DESCRIPTIONS[cat]),
-      amount:      Math.round(amount),
-    });
-  }
-
-  txns.sort((a, b) => b.date - a.date);
-  return txns;
-}
-
-/* ── Compute Department Spent ─────────────────────────────── */
-
-function computeDeptSpent(txns) {
-  const map = {};
-  DEPARTMENTS.forEach(d => { map[d.id] = 0; });
-  txns.forEach(t => { map[t.deptId] = (map[t.deptId] || 0) + t.amount; });
-  return map;
-}
-
-/* ── Summary Cards ────────────────────────────────────────── */
-
+/* ── Summary ──────────────────────────────────────────────── */
 function renderSummary(txns) {
   const totalBudget = DEPARTMENTS.reduce((s, d) => s + d.budget, 0);
   const totalSpent  = txns.reduce((s, t) => s + t.amount, 0);
@@ -173,8 +63,26 @@ function renderSummary(txns) {
   document.getElementById('progressFill').style.width = Math.min(pct, 100) + '%';
 }
 
-/* ── Department Bar Chart ─────────────────────────────────── */
+/* ── Data source bar ──────────────────────────────────────── */
+function renderDataSourceBar(spendingSource, spendingLabel, newsSource, newsFeedName) {
+  const bar = document.getElementById('dataSourceBar');
+  const spendingIsLive = spendingSource === 'live';
+  const newsIsLive     = newsSource === 'live';
 
+  bar.innerHTML = `
+    <div class="data-source-bar">
+      <span class="ds-label">Data sources:</span>
+      <span class="ds-pill ${spendingIsLive ? 'ds-live' : 'ds-mock'}">
+        ${spendingIsLive ? '● Live' : '○ Demo'} Spending — ${spendingLabel}
+      </span>
+      <span class="ds-pill ${newsIsLive ? 'ds-live' : 'ds-mock'}">
+        ${newsIsLive ? '● Live' : '○ Unavailable'} News${newsIsLive ? ` — ${newsFeedName}` : ''}
+      </span>
+    </div>
+  `;
+}
+
+/* ── Charts ───────────────────────────────────────────────── */
 function renderDeptChart(deptSpent) {
   const labels  = DEPARTMENTS.map(d => d.name);
   const budgets = DEPARTMENTS.map(d => d.budget / 1e6);
@@ -186,27 +94,12 @@ function renderDeptChart(deptSpent) {
     data: {
       labels,
       datasets: [
-        {
-          label: 'Budget ($M)',
-          data: budgets,
-          backgroundColor: colors.map(c => c + '33'),
-          borderColor: colors,
-          borderWidth: 2,
-          borderRadius: 4,
-        },
-        {
-          label: 'Spent ($M)',
-          data: spent,
-          backgroundColor: colors.map(c => c + 'cc'),
-          borderColor: colors,
-          borderWidth: 0,
-          borderRadius: 4,
-        },
+        { label: 'Budget ($M)', data: budgets, backgroundColor: colors.map(c => c + '33'), borderColor: colors, borderWidth: 2, borderRadius: 4 },
+        { label: 'Spent ($M)',  data: spent,   backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 0, borderRadius: 4 },
       ],
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position: 'top', labels: { font: { size: 11 } } },
         tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(1)}M` } },
@@ -218,8 +111,6 @@ function renderDeptChart(deptSpent) {
     },
   });
 }
-
-/* ── Allocation Donut ─────────────────────────────────────── */
 
 function renderAllocChart(txns) {
   const catTotals = {};
@@ -233,14 +124,9 @@ function renderAllocChart(txns) {
 
   new Chart(document.getElementById('allocChart'), {
     type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }],
-    },
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '68%',
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${(ctx.parsed / total * 100).toFixed(1)}%` } },
@@ -250,7 +136,7 @@ function renderAllocChart(txns) {
 
   const legend = document.getElementById('allocLegend');
   labels.forEach((l, i) => {
-    const pct  = (data[i] / total * 100).toFixed(1);
+    const pct = (data[i] / total * 100).toFixed(1);
     const item = document.createElement('div');
     item.className = 'legend-item';
     item.innerHTML = `
@@ -262,58 +148,31 @@ function renderAllocChart(txns) {
   });
 }
 
-/* ── Trend Chart ──────────────────────────────────────────── */
-
 function renderTrendChart() {
   new Chart(document.getElementById('trendChart'), {
     type: 'line',
     data: {
       labels: MONTHLY_LABELS,
       datasets: [
-        {
-          label: 'Monthly Budget ($M)',
-          data: MONTHLY_BUDGET,
-          borderColor: '#b0bec5',
-          borderDash: [6, 3],
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false,
-          tension: 0,
-        },
-        {
-          label: 'Actual Spending ($M)',
-          data: MONTHLY_SPENT,
-          borderColor: '#1a5fa8',
-          backgroundColor: 'rgba(26,95,168,.08)',
-          borderWidth: 3,
-          pointBackgroundColor: '#1a5fa8',
-          pointRadius: 5,
-          fill: true,
-          tension: 0.35,
-        },
+        { label: 'Monthly Budget ($M)', data: MONTHLY_BUDGET, borderColor: '#b0bec5', borderDash: [6,3], borderWidth: 2, pointRadius: 0, fill: false, tension: 0 },
+        { label: 'Actual Spending ($M)', data: MONTHLY_SPENT, borderColor: '#1a5fa8', backgroundColor: 'rgba(26,95,168,.08)', borderWidth: 3, pointBackgroundColor: '#1a5fa8', pointRadius: 5, fill: true, tension: 0.35 },
       ],
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position: 'top', labels: { font: { size: 11 } } },
         tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y}M` } },
       },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-        y: {
-          min: 200,
-          ticks: { callback: v => '$' + v + 'M', font: { size: 11 } },
-          grid: { color: '#e8ecf1' },
-        },
+        y: { min: 200, ticks: { callback: v => '$' + v + 'M', font: { size: 11 } }, grid: { color: '#e8ecf1' } },
       },
     },
   });
 }
 
-/* ── Department Cards ─────────────────────────────────────── */
-
+/* ── Department cards ─────────────────────────────────────── */
 function renderDeptGrid(deptSpent) {
   const container = document.getElementById('deptGrid');
   DEPARTMENTS.forEach(dept => {
@@ -339,50 +198,89 @@ function renderDeptGrid(deptSpent) {
   });
 }
 
-/* ── CSV Export ───────────────────────────────────────────── */
+/* ── News section ─────────────────────────────────────────── */
+function renderNews(articles) {
+  const section = document.getElementById('newsSection');
+  if (!articles || articles.length === 0) { section.hidden = true; return; }
+  section.hidden = false;
 
+  const grid = document.getElementById('newsGrid');
+  grid.innerHTML = '';
+
+  articles.forEach(article => {
+    const pubDate = article.pubDate
+      ? new Date(article.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : '';
+
+    const deptTags = article.depts.map(deptId => {
+      const dept = DEPARTMENTS.find(d => d.id === deptId);
+      if (!dept) return '';
+      return `<button class="news-dept-tag" data-dept="${dept.name}"
+                style="background:${dept.color}18;color:${dept.color};border-color:${dept.color}40">
+                ${dept.icon} ${dept.name}
+              </button>`;
+    }).join('');
+
+    const card = document.createElement('div');
+    card.className = 'news-card';
+    card.innerHTML = `
+      <div class="news-meta">
+        <span class="news-source-name">${article.source}</span>
+        ${pubDate ? `<span class="news-date">${pubDate}</span>` : ''}
+      </div>
+      <h3 class="news-title">
+        <a href="${article.link}" target="_blank" rel="noopener">${article.title}</a>
+      </h3>
+      ${article.description ? `<p class="news-excerpt">${article.description}</p>` : ''}
+      ${deptTags ? `<div class="news-dept-tags">${deptTags}</div>` : ''}
+    `;
+    grid.appendChild(card);
+  });
+
+  // Dept tag click → filter the transactions table
+  grid.querySelectorAll('.news-dept-tag').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const deptName = btn.dataset.dept;
+      const sel = document.getElementById('deptFilter');
+      sel.value = deptName;
+      sel.dispatchEvent(new Event('change'));
+      document.querySelector('.spending-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
+/* ── CSV export ───────────────────────────────────────────── */
 function exportCSV(txns) {
-  const headers = ['Date', 'Department', 'Vendor', 'Category', 'Description', 'Amount'];
-  const rows    = txns.map(t => [
-    t.dateStr,
-    t.department,
-    t.vendor,
-    t.category,
-    t.description,
-    t.amount,
-  ]);
-  const csv = [headers, ...rows]
-    .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-    .join('\n');
+  const headers = ['Date','Department','Vendor','Category','Description','Amount'];
+  const rows = txns.map(t => [t.dateStr, t.department, t.vendor, t.category, t.description, t.amount]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url  = URL.createObjectURL(blob);
   const a    = Object.assign(document.createElement('a'), {
     href: url,
-    download: `houston-spending-${new Date().toISOString().slice(0, 10)}.csv`,
+    download: `houston-spending-${new Date().toISOString().slice(0,10)}.csv`,
   });
   a.click();
   URL.revokeObjectURL(url);
 }
 
 /* ── Table ────────────────────────────────────────────────── */
-
 const PAGE_SIZE = 15;
 let currentPage  = 1;
 let filteredTxns = [];
 let sortCol      = 'date';
 let sortDir      = 'desc';
+let ALL_TXNS     = [];
 
-function populateFilters(txns) {
+function populateFilters() {
   const deptFilter = document.getElementById('deptFilter');
   const catFilter  = document.getElementById('categoryFilter');
-  const depts      = [...new Set(txns.map(t => t.department))].sort();
-
+  const depts = [...new Set(ALL_TXNS.map(t => t.department))].sort();
   depts.forEach(d => {
     const o = document.createElement('option');
     o.value = d; o.textContent = d;
     deptFilter.appendChild(o);
   });
-
   CATEGORIES.forEach(c => {
     const o = document.createElement('option');
     o.value = c; o.textContent = c;
@@ -390,21 +288,19 @@ function populateFilters(txns) {
   });
 }
 
-function applyFilters(txns) {
+function applyFilters() {
   const q    = document.getElementById('searchInput').value.toLowerCase();
   const dept = document.getElementById('deptFilter').value;
   const cat  = document.getElementById('categoryFilter').value;
-
-  return txns.filter(t => {
+  return ALL_TXNS.filter(t => {
     if (dept && t.department !== dept) return false;
     if (cat  && t.category  !== cat)  return false;
-    if (q && ![t.department, t.vendor, t.description, t.category, t.dateStr]
-      .some(s => s.toLowerCase().includes(q))) return false;
+    if (q && ![t.department, t.vendor, t.description, t.category, t.dateStr].some(s => s.toLowerCase().includes(q))) return false;
     return true;
   });
 }
 
-function sortTxns(txns) {
+function sortList(txns) {
   return [...txns].sort((a, b) => {
     let av = a[sortCol], bv = b[sortCol];
     if (sortCol === 'date')   { av = a.date; bv = b.date; }
@@ -416,10 +312,8 @@ function sortTxns(txns) {
   });
 }
 
-function renderTable(txns) {
-  const sorted = sortTxns(txns);
-
-  // Public viewers are limited to PUBLIC_ROW_LIMIT records
+function renderTable(list) {
+  const sorted  = sortList(list);
   const visible = CAN_ALL_RECORDS ? sorted : sorted.slice(0, PUBLIC_ROW_LIMIT);
   filteredTxns  = visible;
 
@@ -440,7 +334,6 @@ function renderTable(txns) {
     const vendorTd = CAN_SEE_VENDORS
       ? t.vendor
       : '<span style="color:var(--gray-3);font-style:italic">Redacted</span>';
-
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${t.dateStr}</td>
@@ -456,36 +349,27 @@ function renderTable(txns) {
   const from = slice.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
   const to   = (currentPage - 1) * PAGE_SIZE + slice.length;
   const cap  = !CAN_ALL_RECORDS ? ` (limited to ${PUBLIC_ROW_LIMIT} for public access)` : '';
-  document.getElementById('rowCount').textContent =
-    `Showing ${from}–${to} of ${total} transactions${cap}`;
-
+  document.getElementById('rowCount').textContent = `Showing ${from}–${to} of ${total} transactions${cap}`;
   renderPagination(pages);
 }
 
 function renderPagination(pages) {
   const pg = document.getElementById('pagination');
   pg.innerHTML = '';
-
-  const makeBtn = (label, page, disabled, active) => {
-    const btn = document.createElement('button');
-    btn.className = 'page-btn' + (active ? ' active' : '');
-    btn.textContent = label;
-    btn.disabled = disabled;
-    btn.addEventListener('click', () => { currentPage = page; renderTable(filteredTxns); });
-    return btn;
+  const btn = (label, page, disabled, active) => {
+    const b = document.createElement('button');
+    b.className = 'page-btn' + (active ? ' active' : '');
+    b.textContent = label;
+    b.disabled = disabled;
+    b.addEventListener('click', () => { currentPage = page; renderTable(filteredTxns); });
+    return b;
   };
-
-  pg.appendChild(makeBtn('‹', currentPage - 1, currentPage === 1, false));
-
+  pg.appendChild(btn('‹', currentPage - 1, currentPage === 1, false));
   let start = Math.max(1, currentPage - 2);
   let end   = Math.min(pages, start + 4);
-  start     = Math.max(1, end - 4);
-
-  for (let p = start; p <= end; p++) {
-    pg.appendChild(makeBtn(p, p, false, p === currentPage));
-  }
-
-  pg.appendChild(makeBtn('›', currentPage + 1, currentPage === pages || pages === 0, false));
+  start = Math.max(1, end - 4);
+  for (let p = start; p <= end; p++) pg.appendChild(btn(p, p, false, p === currentPage));
+  pg.appendChild(btn('›', currentPage + 1, currentPage === pages || pages === 0, false));
 }
 
 function initTableSort() {
@@ -497,42 +381,57 @@ function initTableSort() {
       document.querySelectorAll('.sort-icon').forEach(i => { i.className = 'sort-icon'; });
       th.querySelector('.sort-icon').className = 'sort-icon ' + sortDir;
       currentPage = 1;
-      renderTable(applyFilters(ALL_TXNS));
+      renderTable(applyFilters());
     });
   });
 }
 
 /* ── Bootstrap ────────────────────────────────────────────── */
-let ALL_TXNS;
+async function init() {
+  // Show loading overlay
+  const overlay = document.getElementById('loadingOverlay');
 
-(function init() {
-  ALL_TXNS = generateTransactions(300);
+  // Fetch spending data and news in parallel
+  const [spendingResult, newsResult] = await Promise.all([
+    SpendingAPI.load(),
+    NewsAPI.load(),
+  ]);
+
+  // Use live or mock transactions
+  ALL_TXNS = spendingResult.transactions || generateTransactions(300);
+
+  // Hide loading overlay
+  overlay.classList.add('hidden');
+  setTimeout(() => overlay.remove(), 400);
+
   const deptSpent = computeDeptSpent(ALL_TXNS);
 
   renderSummary(ALL_TXNS);
+  renderDataSourceBar(spendingResult.source, spendingResult.label, newsResult.source, newsResult.feedName);
   renderDeptChart(deptSpent);
   renderAllocChart(ALL_TXNS);
   renderTrendChart();
   renderDeptGrid(deptSpent);
-  populateFilters(ALL_TXNS);
+  renderNews(newsResult.articles);
+  populateFilters();
 
-  // Vendor column header label for public viewers
   if (!CAN_SEE_VENDORS) {
     document.getElementById('vendorHeader').textContent = 'Vendor (redacted)';
   }
 
-  // Export button
   if (CAN_EXPORT) {
     const btn = document.getElementById('exportBtn');
     btn.hidden = false;
     btn.addEventListener('click', () => exportCSV(filteredTxns.length ? filteredTxns : ALL_TXNS));
   }
 
-  const refresh = () => { currentPage = 1; renderTable(applyFilters(ALL_TXNS)); };
+  const refresh = () => { currentPage = 1; renderTable(applyFilters()); };
   document.getElementById('searchInput').addEventListener('input', refresh);
   document.getElementById('deptFilter').addEventListener('change', refresh);
   document.getElementById('categoryFilter').addEventListener('change', refresh);
 
   initTableSort();
   renderTable(ALL_TXNS);
-})();
+}
+
+init();

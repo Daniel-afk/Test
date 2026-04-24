@@ -7,8 +7,17 @@
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="auth.js"></script>
+  <script src="data.js"></script>
 </head>
 <body>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <p>Loading Houston spending data&hellip;</p>
+    </div>
+  </div>
 
   <header class="site-header">
     <div class="header-inner">
@@ -20,36 +29,39 @@
         </div>
       </div>
       <div class="user-info" id="userInfo">
-        <!-- populated by app.js after auth check -->
+        <!-- populated by app.js -->
       </div>
     </div>
   </header>
 
   <main class="container">
 
-    <!-- Access notice (role-specific, populated by app.js) -->
+    <!-- Access notice -->
     <div id="accessNotice"></div>
+
+    <!-- Data source bar -->
+    <div id="dataSourceBar"></div>
 
     <!-- Summary Cards -->
     <section class="summary-cards">
       <div class="card stat-card">
         <div class="stat-label">Total FY Budget</div>
-        <div class="stat-value" id="totalBudget">$0</div>
+        <div class="stat-value" id="totalBudget">—</div>
         <div class="stat-sub">Approved by City Council</div>
       </div>
       <div class="card stat-card">
         <div class="stat-label">Total Spent YTD</div>
-        <div class="stat-value accent-blue" id="totalSpent">$0</div>
+        <div class="stat-value accent-blue" id="totalSpent">—</div>
         <div class="stat-sub">Year-to-date expenditures</div>
       </div>
       <div class="card stat-card">
         <div class="stat-label">Remaining Budget</div>
-        <div class="stat-value accent-green" id="remaining">$0</div>
+        <div class="stat-value accent-green" id="remaining">—</div>
         <div class="stat-sub">Unspent appropriations</div>
       </div>
       <div class="card stat-card">
         <div class="stat-label">Budget Utilized</div>
-        <div class="stat-value accent-orange" id="percentUsed">0%</div>
+        <div class="stat-value accent-orange" id="percentUsed">—</div>
         <div class="stat-sub progress-wrap">
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" id="progressFill"></div>
@@ -83,10 +95,19 @@
       </div>
     </section>
 
-    <!-- Departments Detail -->
+    <!-- Department Breakdown -->
     <section class="card">
       <h2>Department Breakdown</h2>
       <div class="dept-grid" id="deptGrid"></div>
+    </section>
+
+    <!-- Houston News & Budget Context -->
+    <section class="card" id="newsSection" hidden>
+      <div class="news-section-header">
+        <h2>Houston News &amp; Budget Context</h2>
+        <p class="news-section-sub">Click a department tag on any article to filter the spending table below.</p>
+      </div>
+      <div class="news-grid" id="newsGrid"></div>
     </section>
 
     <!-- Transactions Table -->
@@ -94,12 +115,7 @@
       <div class="table-header">
         <h2>Recent Expenditures</h2>
         <div class="table-controls">
-          <input
-            type="text"
-            id="searchInput"
-            class="search-input"
-            placeholder="Search transactions..."
-          />
+          <input type="text" id="searchInput" class="search-input" placeholder="Search transactions…" />
           <select id="deptFilter" class="filter-select">
             <option value="">All Departments</option>
           </select>
@@ -134,8 +150,8 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p>Data sourced from the City of Houston Finance Department. This tracker is for public transparency purposes.</p>
-      <p>Houston, TX 77002 &bull; finance.houstontx.gov</p>
+      <p>Spending data sourced from the City of Houston Open Finance Portal (openfinance.houstontx.gov). News from local RSS feeds.</p>
+      <p>Houston, TX 77002 &bull; openfinance.houstontx.gov</p>
     </div>
   </footer>
 
