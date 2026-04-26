@@ -203,9 +203,10 @@ function renderZipBreakdown(txns) {
   const zipMap  = computeZipSpent(txns);
   const entries = Object.values(zipMap).sort((a, b) => b.spent - a.spent);
 
-  // Chart — top 10 by spend
+  // Chart — top 10 by spend (destroy previous instance first)
+  if (window._zipChart) { window._zipChart.destroy(); }
   const top10   = entries.slice(0, 10);
-  new Chart(document.getElementById('zipChart'), {
+  window._zipChart = new Chart(document.getElementById('zipChart'), {
     type: 'bar',
     data: {
       labels:   top10.map(e => e.zip + ' · ' + e.neighborhood),
@@ -484,7 +485,12 @@ async function init() {
     btn.addEventListener('click', () => exportCSV(filteredTxns.length ? filteredTxns : ALL_TXNS));
   }
 
-  const refresh = () => { currentPage = 1; renderTable(applyFilters()); };
+  const refresh = () => {
+    currentPage = 1;
+    const filtered = applyFilters();
+    renderTable(filtered);
+    renderZipBreakdown(filtered);
+  };
   document.getElementById('searchInput').addEventListener('input', refresh);
   document.getElementById('deptFilter').addEventListener('change', refresh);
   document.getElementById('categoryFilter').addEventListener('change', refresh);
