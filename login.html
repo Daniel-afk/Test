@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — Houston Spending Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="login-body">
+
+  <div class="login-wrapper">
+
+    <div class="login-brand">
+      <div class="city-seal city-seal--lg">H</div>
+      <h1 class="login-title">Houston Spending Tracker</h1>
+      <p class="login-subtitle">City of Houston — Fiscal Year 2025–2026</p>
+    </div>
+
+    <div class="login-card">
+      <h2 class="login-card-heading">Sign In</h2>
+
+      <div id="loginError" class="login-error" hidden></div>
+
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="username" class="form-label">Username</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            class="form-input"
+            placeholder="Enter your username"
+            autocomplete="username"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <div class="password-wrap">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+            />
+            <button type="button" class="toggle-pw" id="togglePw" aria-label="Show password">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
+      </form>
+    </div>
+
+    <details class="demo-creds">
+      <summary>Demo credentials</summary>
+      <table class="creds-table">
+        <thead>
+          <tr><th>Username</th><th>Password</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><button class="cred-fill" data-u="admin"   data-p="houston@2026">admin</button></td>
+            <td><code>houston@2026</code></td>
+            <td><span class="role-pill role-admin">Administrator</span></td>
+          </tr>
+          <tr>
+            <td><button class="cred-fill" data-u="analyst" data-p="analyst@2026">analyst</button></td>
+            <td><code>analyst@2026</code></td>
+            <td><span class="role-pill role-analyst">Budget Analyst</span></td>
+          </tr>
+          <tr>
+            <td><button class="cred-fill" data-u="public"  data-p="public@2026">public</button></td>
+            <td><code>public@2026</code></td>
+            <td><span class="role-pill role-public">Public Viewer</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="creds-note">Click a username to auto-fill the form.</p>
+    </details>
+
+    <p class="login-footer-note">
+      For access issues contact <a href="mailto:finance@houstontx.gov">finance@houstontx.gov</a>
+    </p>
+
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (Auth.getSession()) window.location.href = 'index.html';
+
+    const form     = document.getElementById('loginForm');
+    const errorBox = document.getElementById('loginError');
+    const loginBtn = document.getElementById('loginBtn');
+    const togglePw = document.getElementById('togglePw');
+    const pwInput  = document.getElementById('password');
+
+    togglePw.addEventListener('click', () => {
+      const show = pwInput.type === 'password';
+      pwInput.type = show ? 'text' : 'password';
+      togglePw.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      errorBox.hidden = true;
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in…';
+
+      const username = document.getElementById('username').value;
+      const password = pwInput.value;
+      const result   = Auth.login(username, password);
+
+      if (result.ok) {
+        window.location.href = 'index.html';
+      } else {
+        errorBox.textContent = result.error;
+        errorBox.hidden = false;
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In';
+      }
+    });
+
+    document.querySelectorAll('.cred-fill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('username').value = btn.dataset.u;
+        document.getElementById('password').value = btn.dataset.p;
+        document.getElementById('username').focus();
+      });
+    });
+  </script>
+</body>
+</html>

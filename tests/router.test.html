@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Router smoke tests</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; }
+    h1   { font-size: 1.1rem; margin-bottom: 20px; }
+    .pass { color: #2e7d32; }
+    .fail { color: #c62828; font-weight: bold; }
+    .case { margin: 8px 0; font-size: .9rem; font-family: monospace; }
+    #summary { margin-top: 24px; font-weight: 700; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Router smoke tests</h1>
+  <div id="view-outlet"></div>
+  <div id="results"></div>
+  <div id="summary"></div>
+
+  <script src="../router.js"></script>
+  <script>
+    const results = [];
+
+    function assert(desc, condition) {
+      results.push({ desc, ok: !!condition });
+      const el = document.createElement('div');
+      el.className = 'case ' + (condition ? 'pass' : 'fail');
+      el.textContent = (condition ? '✓' : '✗') + '  ' + desc;
+      document.getElementById('results').appendChild(el);
+    }
+
+    /* ── register stub routes ────────────────────────────────── */
+
+    Router.registerRoute('/dashboard', ({ params, query }) => {
+      document.getElementById('view-outlet').innerHTML =
+        '<p id="dashboard-view">Dashboard</p>';
+    });
+
+    Router.registerRoute('/transactions', ({ params, query }) => {
+      document.getElementById('view-outlet').innerHTML =
+        `<p id="transactions-view">Transactions q=${query.q || ''}</p>`;
+    });
+
+    Router.registerRoute('/vendors/:id', ({ params, query }) => {
+      document.getElementById('view-outlet').innerHTML =
+        `<h1 id="vendor-heading">Vendor ${params.id}</h1>` +
+        `<p>Profile coming in Phase 1 Step 3.</p>`;
+    });
+
+    Router.registerRoute('/anomalies', ({ params, query }) => {
+      document.getElementById('view-outlet').innerHTML =
+        '<h1 id="anomalies-heading">Anomaly Feed</h1>' +
+        '<p>Coming in Phase 1 Step 4.</p>';
+    });
+
+    Router.onNotFound(({ path }) => {
+      document.getElementById('view-outlet').innerHTML =
+        `<p id="not-found">Not found: ${path}</p>`;
+    });
+
+    Router.start();
+
+    /* ── Test 1: /vendors/42 ─────────────────────────────────── */
+
+    Router.navigate('/vendors/42');
+
+    assert(
+      "navigate('/vendors/42') renders vendor placeholder",
+      document.getElementById('vendor-heading') !== null &&
+      document.getElementById('vendor-heading').textContent === 'Vendor 42'
+    );
+
+    assert(
+      "getCurrentRoute().params.id === '42'",
+      Router.getCurrentRoute()?.params?.id === '42'
+    );
+
+    assert(
+      "getCurrentRoute().path === '/vendors/42'",
+      Router.getCurrentRoute()?.path === '/vendors/42'
+    );
+
+    /* ── Test 2: /transactions?q=paving ─────────────────────── */
+
+    Router.navigate('/transactions?q=paving');
+
+    assert(
+      "navigate('/transactions?q=paving') renders transactions view",
+      document.getElementById('transactions-view') !== null
+    );
+
+    assert(
+      "getCurrentRoute().query.q === 'paving'",
+      Router.getCurrentRoute()?.query?.q === 'paving'
+    );
+
+    assert(
+      "getCurrentRoute().path === '/transactions'  (no query in path)",
+      Router.getCurrentRoute()?.path === '/transactions'
+    );
+
+    /* ── Test 3: /anomalies ──────────────────────────────────── */
+
+    Router.navigate('/anomalies');
+
+    assert(
+      "navigate('/anomalies') renders anomaly stub",
+      document.getElementById('anomalies-heading') !== null
+    );
+
+    assert(
+      "getCurrentRoute().params is empty object for paramless route",
+      JSON.stringify(Router.getCurrentRoute()?.params) === '{}'
+    );
+
+    /* ── Test 4: unknown route ───────────────────────────────── */
+
+    Router.navigate('/does-not-exist');
+
+    assert(
+      "unknown route triggers not-found handler",
+      document.getElementById('not-found') !== null
+    );
+
+    assert(
+      "getCurrentRoute().pattern is null for unmatched route",
+      Router.getCurrentRoute()?.pattern === null
+    );
+
+    /* ── Test 5: navigate to same hash ───────────────────────── */
+
+    Router.navigate('/vendors/99');
+    Router.navigate('/vendors/99'); // same hash — should still resolve
+
+    assert(
+      "navigate to same path twice still resolves",
+      Router.getCurrentRoute()?.params?.id === '99'
+    );
+
+    /* ── Test 6: :param decoding ─────────────────────────────── */
+
+    Router.navigate('/vendors/hello%20world');
+
+    assert(
+      "URL-encoded :param is decoded in getCurrentRoute().params",
+      Router.getCurrentRoute()?.params?.id === 'hello world'
+    );
+
+    /* ── summary ─────────────────────────────────────────────── */
+
+    const passed = results.filter(r => r.ok).length;
+    const total  = results.length;
+    const allOk  = passed === total;
+    const sumEl  = document.getElementById('summary');
+    sumEl.style.color = allOk ? '#2e7d32' : '#c62828';
+    sumEl.textContent = `${passed}/${total} tests passed` + (allOk ? ' — all green ✓' : ' — FAILURES above ✗');
+  </script>
+</body>
+</html>
