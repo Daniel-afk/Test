@@ -48,6 +48,40 @@ const DEPT_KEYWORDS = {
   solid:    ['trash', 'recycling', 'solid waste', 'garbage', 'landfill', 'litter', 'bulk pickup'],
 };
 
+/* ── Houston ZIP code reference ───────────────────────────── */
+const ZIP_DATA = [
+  { zip: '77002', neighborhood: 'Downtown' },
+  { zip: '77003', neighborhood: 'East Downtown' },
+  { zip: '77004', neighborhood: 'Midtown' },
+  { zip: '77006', neighborhood: 'Montrose' },
+  { zip: '77007', neighborhood: 'Washington Ave' },
+  { zip: '77008', neighborhood: 'Heights' },
+  { zip: '77009', neighborhood: 'Near Northside' },
+  { zip: '77011', neighborhood: 'East End' },
+  { zip: '77018', neighborhood: 'Garden Oaks' },
+  { zip: '77019', neighborhood: 'River Oaks' },
+  { zip: '77020', neighborhood: 'Fifth Ward' },
+  { zip: '77021', neighborhood: 'Sunnyside' },
+  { zip: '77025', neighborhood: 'Braeswood' },
+  { zip: '77026', neighborhood: 'Trinity' },
+  { zip: '77030', neighborhood: 'Medical Center' },
+  { zip: '77032', neighborhood: 'Greenspoint' },
+  { zip: '77036', neighborhood: 'Chinatown' },
+  { zip: '77040', neighborhood: 'NW Houston' },
+  { zip: '77045', neighborhood: 'Hobby Area' },
+  { zip: '77054', neighborhood: 'Kirby' },
+  { zip: '77056', neighborhood: 'Galleria' },
+  { zip: '77058', neighborhood: 'Clear Lake' },
+  { zip: '77071', neighborhood: 'Sharpstown' },
+  { zip: '77077', neighborhood: 'Energy Corridor' },
+  { zip: '77079', neighborhood: 'Memorial' },
+  { zip: '77084', neighborhood: 'Katy Area' },
+  { zip: '77088', neighborhood: 'Acres Homes' },
+  { zip: '77091', neighborhood: 'Acres Homes N' },
+  { zip: '77095', neighborhood: 'Copperfield' },
+  { zip: '77098', neighborhood: 'Neartown' },
+];
+
 /* ── Mock data generation ─────────────────────────────────── */
 const _VENDORS = [
   'Jacobs Engineering Group', 'Kiewit Infrastructure', 'Turner Construction',
@@ -89,16 +123,19 @@ function generateTransactions(count = 300) {
     else if (cat === 'Personnel Services') amount = _rand(50_000, 3_000_000);
     else                                   amount = _rand(10_000, 2_000_000);
 
+    const zipEntry = _pick(ZIP_DATA);
     txns.push({
-      id:          i + 1,
+      id:           i + 1,
       date,
-      dateStr:     date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      department:  dept.name,
-      deptId:      dept.id,
-      vendor:      _pick(_VENDORS),
-      category:    cat,
-      description: _pick(_DESCRIPTIONS[cat]),
-      amount:      Math.round(amount),
+      dateStr:      date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      department:   dept.name,
+      deptId:       dept.id,
+      vendor:       _pick(_VENDORS),
+      category:     cat,
+      description:  _pick(_DESCRIPTIONS[cat]),
+      amount:       Math.round(amount),
+      zipCode:      zipEntry.zip,
+      neighborhood: zipEntry.neighborhood,
     });
   }
 
@@ -110,6 +147,24 @@ function computeDeptSpent(txns) {
   const map = {};
   DEPARTMENTS.forEach(d => { map[d.id] = 0; });
   txns.forEach(t => { map[t.deptId] = (map[t.deptId] || 0) + t.amount; });
+  return map;
+}
+
+function computeZipSpent(txns) {
+  const map = {};
+  txns.forEach(t => {
+    if (!map[t.zipCode]) {
+      map[t.zipCode] = { zip: t.zipCode, neighborhood: t.neighborhood, spent: 0, count: 0, deptTotals: {} };
+    }
+    const entry = map[t.zipCode];
+    entry.spent += t.amount;
+    entry.count += 1;
+    entry.deptTotals[t.department] = (entry.deptTotals[t.department] || 0) + t.amount;
+  });
+  Object.values(map).forEach(entry => {
+    entry.topDept = Object.entries(entry.deptTotals).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+    delete entry.deptTotals;
+  });
   return map;
 }
 
@@ -151,16 +206,21 @@ function _mapCKANRecord(rec, index) {
   const dept    = _mapDept(deptRaw);
   const catRaw  = rec.object_name || rec.account_name || rec.category || rec.fund_name || '';
 
+  const rawZip   = (rec.zip_code || rec.zip || rec.postal_code || '').toString().trim().slice(0, 5);
+  const zipEntry = ZIP_DATA.find(z => z.zip === rawZip) || _pick(ZIP_DATA);
+
   return {
-    id:          index + 1,
+    id:           index + 1,
     date,
-    dateStr:     date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    department:  dept.name,
-    deptId:      dept.id,
-    vendor:      (rec.vendor_name || rec.payee_name || rec.vendor || 'Unknown').trim(),
-    category:    _mapCategory(catRaw),
-    description: (rec.account_description || rec.description || catRaw || '').trim() || dept.name,
-    amount:      Math.abs(rawAmount),
+    dateStr:      date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    department:   dept.name,
+    deptId:       dept.id,
+    vendor:       (rec.vendor_name || rec.payee_name || rec.vendor || 'Unknown').trim(),
+    category:     _mapCategory(catRaw),
+    description:  (rec.account_description || rec.description || catRaw || '').trim() || dept.name,
+    amount:       Math.abs(rawAmount),
+    zipCode:      zipEntry.zip,
+    neighborhood: zipEntry.neighborhood,
   };
 }
 

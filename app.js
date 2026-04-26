@@ -198,6 +198,49 @@ function renderDeptGrid(deptSpent) {
   });
 }
 
+/* ── ZIP code breakdown ───────────────────────────────────── */
+function renderZipBreakdown(txns) {
+  const zipMap  = computeZipSpent(txns);
+  const entries = Object.values(zipMap).sort((a, b) => b.spent - a.spent);
+
+  // Chart — top 10 by spend
+  const top10   = entries.slice(0, 10);
+  new Chart(document.getElementById('zipChart'), {
+    type: 'bar',
+    data: {
+      labels:   top10.map(e => e.zip + ' · ' + e.neighborhood),
+      datasets: [{ label: 'Total Spent ($M)', data: top10.map(e => +(e.spent / 1e6).toFixed(2)), backgroundColor: '#1a5fa8cc', borderColor: '#1a5fa8', borderWidth: 0, borderRadius: 4 }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` $${ctx.parsed.x.toFixed(2)}M` } },
+      },
+      scales: {
+        x: { ticks: { callback: v => '$' + v + 'M', font: { size: 10 } }, grid: { color: '#e8ecf1' } },
+        y: { ticks: { font: { size: 10 } }, grid: { display: false } },
+      },
+    },
+  });
+
+  // Table — all ZIPs
+  const tbody = document.getElementById('zipTableBody');
+  tbody.innerHTML = '';
+  entries.forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${e.zip}</strong></td>
+      <td>${e.neighborhood}</td>
+      <td style="text-align:center">${e.count}</td>
+      <td class="amount">${fmtMoney(e.spent)}</td>
+      <td style="font-size:.78rem;color:var(--gray-3)">${e.topDept}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
 /* ── News section ─────────────────────────────────────────── */
 function renderNews(articles) {
   const section = document.getElementById('newsSection');
@@ -275,16 +318,28 @@ let ALL_TXNS     = [];
 function populateFilters() {
   const deptFilter = document.getElementById('deptFilter');
   const catFilter  = document.getElementById('categoryFilter');
+  const zipFilter  = document.getElementById('zipFilter');
+
   const depts = [...new Set(ALL_TXNS.map(t => t.department))].sort();
   depts.forEach(d => {
     const o = document.createElement('option');
     o.value = d; o.textContent = d;
     deptFilter.appendChild(o);
   });
+
   CATEGORIES.forEach(c => {
     const o = document.createElement('option');
     o.value = c; o.textContent = c;
     catFilter.appendChild(o);
+  });
+
+  const zips = [...new Set(ALL_TXNS.map(t => t.zipCode))].sort();
+  zips.forEach(z => {
+    const entry = ZIP_DATA.find(d => d.zip === z);
+    const o = document.createElement('option');
+    o.value = z;
+    o.textContent = entry ? `${z} — ${entry.neighborhood}` : z;
+    zipFilter.appendChild(o);
   });
 }
 
@@ -292,10 +347,12 @@ function applyFilters() {
   const q    = document.getElementById('searchInput').value.toLowerCase();
   const dept = document.getElementById('deptFilter').value;
   const cat  = document.getElementById('categoryFilter').value;
+  const zip  = document.getElementById('zipFilter').value;
   return ALL_TXNS.filter(t => {
-    if (dept && t.department !== dept) return false;
-    if (cat  && t.category  !== cat)  return false;
-    if (q && ![t.department, t.vendor, t.description, t.category, t.dateStr].some(s => s.toLowerCase().includes(q))) return false;
+    if (dept && t.department !== dept)  return false;
+    if (cat  && t.category  !== cat)   return false;
+    if (zip  && t.zipCode   !== zip)   return false;
+    if (q && ![t.department, t.vendor, t.description, t.category, t.dateStr, t.zipCode, t.neighborhood].some(s => s.toLowerCase().includes(q))) return false;
     return true;
   });
 }
@@ -326,7 +383,7 @@ function renderTable(list) {
   tbody.innerHTML = '';
 
   if (slice.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--gray-3)">No transactions match your filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--gray-3)">No transactions match your filters.</td></tr>';
   }
 
   slice.forEach(t => {
@@ -342,6 +399,7 @@ function renderTable(list) {
       <td><span class="category-pill" style="background:${color}1a;color:${color}">${t.category}</span></td>
       <td>${t.description}</td>
       <td class="amount">${fmtMoneyFull(t.amount)}</td>
+      <td><span class="zip-pill">${t.zipCode}</span></td>
     `;
     tbody.appendChild(tr);
   });
@@ -412,6 +470,7 @@ async function init() {
   renderAllocChart(ALL_TXNS);
   renderTrendChart();
   renderDeptGrid(deptSpent);
+  renderZipBreakdown(ALL_TXNS);
   renderNews(newsResult.articles);
   populateFilters();
 
@@ -429,6 +488,7 @@ async function init() {
   document.getElementById('searchInput').addEventListener('input', refresh);
   document.getElementById('deptFilter').addEventListener('change', refresh);
   document.getElementById('categoryFilter').addEventListener('change', refresh);
+  document.getElementById('zipFilter').addEventListener('change', refresh);
 
   initTableSort();
   renderTable(ALL_TXNS);
