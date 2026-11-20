@@ -26,20 +26,7 @@
   }
 
   // ---------- Map ----------
-  const topo = window.US_COUNTIES_TOPO;
-  const txGeoms = topo.objects.counties.geometries.filter((g) => String(g.id).startsWith("48"));
-  const counties = txGeoms.map((g) => topojson.feature(topo, g));
-  const outline = topojson.merge(topo, txGeoms);
-
-  const W = 800, H = 720;
-  const svg = d3.select("#map").attr("viewBox", `0 0 ${W} ${H}`);
-  const projection = d3.geoConicEqualArea().parallels([27.5, 35]).rotate([100, 0])
-    .fitExtent([[16, 16], [W - 16, H - 16]], outline);
-  const path = d3.geoPath(projection);
-
-  const countyLayer = svg.append("g");
-  svg.append("path").datum(outline).attr("class", "state-outline").attr("d", path);
-  const pinLayer = svg.append("g");
+  const { projection, countyLayer, pinLayer } = window.createTexasMap("#map");
 
   const tooltip = document.getElementById("tooltip");
   const mapCard = document.querySelector(".map-card");
@@ -59,10 +46,6 @@
   }
 
   countyLayer.selectAll("path")
-    .data(counties)
-    .join("path")
-    .attr("class", "county")
-    .attr("d", path)
     .on("mousemove", (ev, d) => {
       const box = mapCard.getBoundingClientRect();
       tooltip.hidden = false;

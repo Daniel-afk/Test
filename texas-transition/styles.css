@@ -150,3 +150,75 @@ h1, h2 { line-height: 1.2; margin: 0; }
   .county, .office .bar { transition: none; }
   .pin circle.pulse { animation: none; display: none; }
 }
+
+/* ---------- Navigation ---------- */
+.site-nav { display: flex; gap: 4px; padding: 16px 32px 0; }
+.site-nav a {
+  padding: 6px 14px; border-radius: 999px; text-decoration: none;
+  color: var(--muted); font-size: 14px; font-weight: 600;
+}
+.site-nav a:hover { color: var(--ink); background: var(--neutral); }
+.site-nav a[aria-current="page"] { background: var(--ink); color: #fff; }
+
+/* ---------- Policies & data centers page ---------- */
+.dc-pin { cursor: pointer; }
+.dc-pin circle { stroke: #fff; stroke-width: 1.5; transition: opacity 300ms ease; }
+.dc-pin.operating circle { fill: #1f7a4d; }
+.dc-pin.construction circle { fill: #d98a00; }
+.dc-pin.planned circle { fill: #fff; stroke: #6a4fb3; stroke-width: 3; }
+.dc-pin.dim { opacity: 0.15; }
+.dc-pin.selected circle { stroke: var(--ink); stroke-width: 3; }
+.dc-pin text { font-size: 11px; font-weight: 600; fill: var(--ink); paint-order: stroke; stroke: #fff; stroke-width: 3px; pointer-events: none; }
+.swatch.operating { background: #1f7a4d; border-radius: 50%; }
+.swatch.construction { background: #d98a00; border-radius: 50%; }
+.swatch.planned { background: #fff; border: 2px solid #6a4fb3; border-radius: 50%; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; color: var(--muted); }
+.filters label { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
+.map-filters { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.count-row { display: flex; gap: 16px; font-size: 14px; margin: 0 0 4px; }
+.count-row strong { font-size: 20px; display: block; color: var(--ink); }
+.count-row span { color: var(--muted); }
+
+.detail-card { padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.detail-card h2 { font-size: 20px; margin-bottom: 8px; }
+.detail-card dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 12px 0; font-size: 14px; }
+.detail-card dt { color: var(--muted); }
+.detail-card dd { margin: 0; }
+.detail-card .impact { background: #f3f7f4; border-left: 4px solid #1f7a4d; padding: 8px 12px; border-radius: 6px; font-size: 14px; }
+.detail-card a { color: var(--dem); }
+.status-chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
+.status-chip.operating { background: #dcefe4; color: #1f5b3a; }
+.status-chip.construction { background: #fbecd0; color: #7a4d00; }
+.status-chip.planned { background: #ebe5f7; color: #4b3a7a; }
+.status-chip.law { background: var(--dem-soft); color: #1d3f75; }
+.status-chip.vetoed { background: var(--rep-soft); color: #7a2219; }
+.status-chip.voters { background: #fff1d1; color: #6b4f00; }
+
+.policy-years { display: flex; flex-direction: column; gap: 16px; }
+.policy-year h3 { font-size: 14px; color: var(--muted); margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+.policy-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.policy-list button {
+  width: 100%; height: 100%; text-align: left; font: inherit; cursor: pointer;
+  border: 1px solid var(--line); border-left: 4px solid var(--neutral); border-radius: 10px;
+  background: var(--surface); padding: 10px 12px;
+}
+.policy-list button:hover { border-color: var(--ink); }
+.policy-list button:focus-visible { outline: 2px solid var(--dem); outline-offset: 2px; }
+.policy-list button[aria-current="true"] { background: #fbf8ef; border-color: var(--ink); }
+.policy-list .bill { display: block; font-size: 12px; color: var(--muted); }
+.policy-list .t { display: block; font-size: 14px; font-weight: 600; }
+.cat-energy { border-left-color: #d98a00 !important; }
+.cat-datacenters { border-left-color: #1f7a4d !important; }
+.cat-education { border-left-color: #2b5fad !important; }
+.cat-taxes { border-left-color: #6a4fb3 !important; }
+.cat-safety { border-left-color: #c0392b !important; }
+.cat-health { border-left-color: #b03a7a !important; }
+.cat-local { border-left-color: #5d6673 !important; }
+.cat-elections { border-left-color: #1d232b !important; }
+.cat-water { border-left-color: #1c8bb0 !important; }
+.empty { color: var(--muted); font-size: 14px; }
+
+@media (max-width: 900px) {
+  .site-nav { padding: 12px 16px 0; }
+}
