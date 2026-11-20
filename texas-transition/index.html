@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Texas in Transition — Interactive Map &amp; Timeline</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <h1>Texas in Transition</h1>
+      <p class="subtitle">How state government changes hands after Democrats win the governor's office and other statewide seats in 2026.</p>
+    </div>
+    <p class="banner" role="note">Results are unofficial until the state canvass is complete.</p>
+  </header>
+
+  <main class="layout">
+    <section class="map-card" aria-label="Map of Texas">
+      <div class="map-toolbar">
+        <span id="map-caption" class="map-caption"></span>
+        <div class="legend" aria-hidden="true">
+          <span><i class="swatch d"></i>Democratic</span>
+          <span><i class="swatch r"></i>Republican</span>
+          <span><i class="pin-swatch"></i>Event location</span>
+        </div>
+      </div>
+      <svg id="map" role="img" aria-labelledby="map-caption"></svg>
+      <div id="tooltip" class="tooltip" hidden></div>
+      <p id="county-note" class="county-note"></p>
+    </section>
+
+    <aside class="side">
+      <article class="event-card" aria-live="polite">
+        <p class="event-meta"><span id="event-phase" class="phase"></span> <time id="event-date"></time></p>
+        <h2 id="event-title"></h2>
+        <p id="event-body"></p>
+      </article>
+
+      <section class="power-card">
+        <h2>Who holds power <span id="power-asof" class="asof"></span></h2>
+        <ul id="offices" class="offices"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <section class="timeline-card" aria-label="Timeline">
+    <div class="timeline-controls">
+      <button id="prev" type="button" aria-label="Previous event">‹</button>
+      <button id="play" type="button">Play</button>
+      <button id="next" type="button" aria-label="Next event">›</button>
+      <div class="phase-filter" role="group" aria-label="Show phases">
+        <label><input type="checkbox" value="history" checked> History</label>
+        <label><input type="checkbox" value="election" checked> Election</label>
+        <label><input type="checkbox" value="transition" checked> Transition</label>
+        <label><input type="checkbox" value="governing" checked> Governing</label>
+      </div>
+    </div>
+    <ol id="timeline" class="timeline"></ol>
+  </section>
+
+  <footer class="site-footer">
+    <h2>Sources</h2>
+    <ul id="sources"></ul>
+    <p>Edit <code>data.js</code> to update offices and events, and <code>county-results.js</code> to color counties by the governor's race result. Map: U.S. Census boundaries via us-atlas.</p>
+  </footer>
+
+  <script src="vendor/d3.min.js"></script>
+  <script src="vendor/topojson-client.min.js"></script>
+  <script src="vendor/us-counties-topo.js"></script>
+  <script src="data.js"></script>
+  <script src="county-results.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
